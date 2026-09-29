@@ -1,31 +1,54 @@
+# Sales Dashboard (Streamlit, login-gated)
 
-# Add a User Authentication Service (Login Form) in Streamlit
+Sales dashboard for the supermarket dataset, visible only after login.
 
-In this video, I will show you how to add a user authentication service (login form) in Streamlit so that your users can log in and see the content of your streamlit app. To implement the user authentication, we will use the ‘streamlit-authenticator’ library, a secure authentication module to validate user credentials in a Streamlit application.
+## Run
 
-## Video Tutorial
-[![YouTube Video](https://img.youtube.com/vi/JoFGrSRj4X4/0.jpg)](https://youtu.be/JoFGrSRj4X4)
+```bash
+python keys.py        # one-time: writes cookie_key into .streamlit/config.toml
+python app.py         # starts Streamlit on http://127.0.0.1:8000
+```
 
-## Demo Website
-⭐ https://userauth-dashboard.herokuapp.com/
+Open http://127.0.0.1:8000/login (the root URL works too). The first launch
+auto-creates an empty `credentials.json`; use the **Register** tab to create an
+account, then log in. Refreshing the page keeps you logged in until the cookie
+expires; **Logout** clears the session.
 
-## Screenshot
-![Login Screenshot](/demo.jpg?raw=true "Login Form")
+## How authentication works
 
-## Streamlit-authenticator
-⭐ Check out the library here: https://github.com/mkhorasani/Streamlit-Authenticator
+- `keys.py` generates the cookie signing key and stores it in the `[auth]`
+  section of `.streamlit/config.toml` (it never rotates an existing key).
+- `app.py` reads `cookie_name`, `cookie_key`, `cookie_expiry_days` and
+  `credentials_file` from that same config, so signer and verifier always
+  agree. The token is an HMAC-signed `username/iat/exp` payload.
+- Credentials live in `credentials.json`: passwords are bcrypt hashes only,
+  never plaintext. Registration merges by username under an OS file lock
+  (`msvcrt` on Windows, `fcntl` elsewhere) and writes via a temp file plus
+  atomic `os.replace`, so concurrent registrations cannot lose updates.
+- A duplicate username is **rejected** on registration and the existing hash is
+  preserved.
+- A missing credentials file is auto-provisioned (empty store) on first start;
+  a *corrupt* file degrades to a login/unavailable prompt instead of crashing.
+- The xlsx is loaded only after authentication succeeds and is cached with
+  `st.cache_data`.
 
-## Learn Excel Automation with Python
-If this repo helped you, my [Excel Automation Course](https://pythonandvba.com/excel-automation-course/) teaches the full workflow from zero: Python for Excel users, xlwings, pandas and real projects.
+## Trade-offs
 
-Also check out my other [tools and templates](https://pythonandvba.com/solutions).
+- Cookie lifetime is fixed at 7 days (`cookie_expiry_days` in config.toml),
+  with no sliding renewal: bounded exposure if a cookie is stolen, predictable
+  re-login frequency.
+- Duplicate usernames are rejected (never overwritten) to prevent account
+  hijacking by name guessing.
+- Missing credentials on first start auto-provision an empty store; corrupt
+  credentials are surfaced and require administrator action.
 
-## Connect with Me
-- **YouTube:** [CodingIsFun](https://youtube.com/c/CodingIsFun)
-- **Website:** [PythonAndVBA](https://pythonandvba.com)
-- **LinkedIn:** [Sven Bosau](https://www.linkedin.com/in/sven-bosau/)
-- **Contact:** [Get in Touch](https://pythonandvba.com/contact)
-## Support
-If you find this project helpful, consider buying me a coffee. 
+## Tests
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://pythonandvba.com/coffee-donation)
+```bash
+python -m pytest -q
+```
+
+`tests/test_auth_flow.py` covers: refresh keeps the login, duplicate
+registration preserves the old user, corrupt credentials degrade without
+loading data, first-run provisioning, and concurrent registrations with no
+lost updates.

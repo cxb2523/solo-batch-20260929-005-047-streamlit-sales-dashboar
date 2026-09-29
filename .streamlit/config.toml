@@ -14,3 +14,9 @@ textColor = "#FFF"
 # Font family for all text in the app, except code blocks. One of "sans serif", "serif", or "monospace".
 # Default: "sans serif"
 font = "sans serif"
+
+[auth]
+cookie_name = "sales_dashboard_auth"
+cookie_expiry_days = 7
+credentials_file = "credentials.json"
+cookie_key = "vQIei2OcpSR7VYSAKI_lVcP755V_Oh6YBE_8KiumcyI"
