@@ -1,3 +1,19 @@
+[server]
+# Manual check: `python app.py` serves on http://127.0.0.1:8000
+port = 8000
+headless = true
+
+[auth]
+# Single source of truth for the session cookie, owned by keys.py.
+# cookie_name: browser cookie that keeps the login across refreshes.
+# cookie_key:  HMAC signing secret -- MUST stay stable, rotating logs
+#              everyone out. Generated once by `python keys.py`.
+# cookie_expiry_days: fixed absolute lifetime from login (no sliding
+#              extension); see trade-off #1 in app.py.
+cookie_name = "sales_dashboard_auth"
+cookie_key = "1ccabbc0178ec732fade0b7e0796d916d49c13f00755d21fe34c595e02adda53"
+cookie_expiry_days = 30
+
 [theme]
 # Primary accent color for interactive elements.
 primaryColor = "#E694FF"

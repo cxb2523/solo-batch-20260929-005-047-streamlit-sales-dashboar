@@ -1,14 +1,11 @@
-import pickle
-from pathlib import Path
+"""Legacy entry point kept for compatibility; the real bootstrap is keys.py.
 
-import streamlit_authenticator as stauth
+Run `python keys.py` to create the cookie key in .streamlit/config.toml and
+the empty credentials.json store, or
+`python keys.py <username> <name> <password>` to seed a user (bcrypt-hashed).
+"""
 
-names = ["Peter Parker", "Rebecca Miller"]
-usernames = ["pparker", "rmiller"]
-passwords = ["XXX", "XXX"]
+from keys import main
 
-hashed_passwords = stauth.Hasher(passwords).generate()
-
-file_path = Path(__file__).parent / "hashed_pw.pkl"
-with file_path.open("wb") as file:
-    pickle.dump(hashed_passwords, file)
+if __name__ == "__main__":
+    main()
